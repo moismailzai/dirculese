@@ -1,11 +1,11 @@
 package main
 
 import (
+	"os"
 	"os/user"
 	"runtime"
 	"strings"
 	"testing"
-	"os"
 )
 
 var (
