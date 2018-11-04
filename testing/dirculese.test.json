@@ -1,5 +1,5 @@
 {
-  "Folders": [
+  "Directories": [
     {
       "Path": "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
       "Rules": [

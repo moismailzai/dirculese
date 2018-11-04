@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	configStruct = FoldersConfig{
-		Folders: []FolderConfig{{
+	configStruct = DirectoriesConfig{
+		Directories: []DirectoryConfig{{
 			Path: "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
 			Rules: []RuleConfig{{
 				Target:     "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved",
@@ -24,10 +24,10 @@ var (
 			}},
 		}},
 	}
-	folders = []Folder{{
+	directories = []Directory{{
 		path: "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
 		rules: []Rule{{
-			target:     &Folder{path: "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved"},
+			target:     &Directory{path: "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved"},
 			delete:     false,
 			handler:    "ExtensionHandler",
 			extensions: []string{"png"},
@@ -37,11 +37,11 @@ var (
 			dateMin:    0,
 		}},
 	}}
-	sampleConfig = `{"Folders":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
+	sampleConfig = `{"Directories":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
 )
 
 func init() {
-	folders[0].rules[0].source = &folders[0]
+	directories[0].rules[0].source = &directories[0]
 }
 
 func TestGetConfigFilePath(t *testing.T) {
@@ -66,36 +66,36 @@ func TestGetConfigStruct(t *testing.T) {
 	want := configStruct
 	got, _ := GetConfigStruct("./testing/dirculese.test.json")
 
-	if got.Folders[0].Rules[0].Target != want.Folders[0].Rules[0].Target {
-		t.Errorf("Mismatch in Target. Got '%v', want '%v'", got.Folders[0].Rules[0].Target, want.Folders[0].Rules[0].Target)
+	if got.Directories[0].Rules[0].Target != want.Directories[0].Rules[0].Target {
+		t.Errorf("Mismatch in Target. Got '%v', want '%v'", got.Directories[0].Rules[0].Target, want.Directories[0].Rules[0].Target)
 	}
-	if got.Folders[0].Rules[0].Delete != want.Folders[0].Rules[0].Delete {
-		t.Errorf("Mismatch in Delete. Got '%v', want '%v'", got.Folders[0].Rules[0].Delete, want.Folders[0].Rules[0].Delete)
+	if got.Directories[0].Rules[0].Delete != want.Directories[0].Rules[0].Delete {
+		t.Errorf("Mismatch in Delete. Got '%v', want '%v'", got.Directories[0].Rules[0].Delete, want.Directories[0].Rules[0].Delete)
 	}
-	if got.Folders[0].Rules[0].Handler != want.Folders[0].Rules[0].Handler {
-		t.Errorf("Mismatch in Handler. Got '%v', want '%v'", got.Folders[0].Rules[0].Handler, want.Folders[0].Rules[0].Handler)
+	if got.Directories[0].Rules[0].Handler != want.Directories[0].Rules[0].Handler {
+		t.Errorf("Mismatch in Handler. Got '%v', want '%v'", got.Directories[0].Rules[0].Handler, want.Directories[0].Rules[0].Handler)
 	}
-	if got.Folders[0].Rules[0].Extensions[0] != want.Folders[0].Rules[0].Extensions[0] {
-		t.Errorf("Mismatch in Extensions[0]. Got '%v', want '%v'", got.Folders[0].Rules[0].Extensions[0], want.Folders[0].Rules[0].Extensions[0])
+	if got.Directories[0].Rules[0].Extensions[0] != want.Directories[0].Rules[0].Extensions[0] {
+		t.Errorf("Mismatch in Extensions[0]. Got '%v', want '%v'", got.Directories[0].Rules[0].Extensions[0], want.Directories[0].Rules[0].Extensions[0])
 	}
-	if got.Folders[0].Rules[0].SizeMax != want.Folders[0].Rules[0].SizeMax {
-		t.Errorf("Mismatch in SizeMax. Got '%v', want '%v'", got.Folders[0].Rules[0].SizeMax, want.Folders[0].Rules[0].SizeMax)
+	if got.Directories[0].Rules[0].SizeMax != want.Directories[0].Rules[0].SizeMax {
+		t.Errorf("Mismatch in SizeMax. Got '%v', want '%v'", got.Directories[0].Rules[0].SizeMax, want.Directories[0].Rules[0].SizeMax)
 	}
-	if got.Folders[0].Rules[0].SizeMin != want.Folders[0].Rules[0].SizeMin {
-		t.Errorf("Mismatch in SizeMin. Got '%v', want '%v'", got.Folders[0].Rules[0].SizeMin, want.Folders[0].Rules[0].SizeMin)
+	if got.Directories[0].Rules[0].SizeMin != want.Directories[0].Rules[0].SizeMin {
+		t.Errorf("Mismatch in SizeMin. Got '%v', want '%v'", got.Directories[0].Rules[0].SizeMin, want.Directories[0].Rules[0].SizeMin)
 	}
-	if got.Folders[0].Rules[0].DateMax != want.Folders[0].Rules[0].DateMax {
-		t.Errorf("Mismatch in DateMax. Got '%v', want '%v'", got.Folders[0].Rules[0].DateMax, want.Folders[0].Rules[0].DateMax)
+	if got.Directories[0].Rules[0].DateMax != want.Directories[0].Rules[0].DateMax {
+		t.Errorf("Mismatch in DateMax. Got '%v', want '%v'", got.Directories[0].Rules[0].DateMax, want.Directories[0].Rules[0].DateMax)
 	}
-	if got.Folders[0].Rules[0].DateMin != want.Folders[0].Rules[0].DateMin {
-		t.Errorf("Mismatch in DateMin. Got '%v', want '%v'", got.Folders[0].Rules[0].DateMin, want.Folders[0].Rules[0].DateMin)
+	if got.Directories[0].Rules[0].DateMin != want.Directories[0].Rules[0].DateMin {
+		t.Errorf("Mismatch in DateMin. Got '%v', want '%v'", got.Directories[0].Rules[0].DateMin, want.Directories[0].Rules[0].DateMin)
 	}
 }
 
-func TestGetFolders(t *testing.T) {
+func TestGetDirectories(t *testing.T) {
 
-	want := folders
-	got := GetFolders(configStruct)
+	want := directories
+	got := GetDirectories(configStruct)
 
 	if got[0].rules[0].target.path != want[0].rules[0].target.path {
 		t.Errorf("Mismatch in path. Got '%v', want '%v'", got[0].rules[0].target.path, want[0].rules[0].target.path)

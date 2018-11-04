@@ -14,7 +14,7 @@ Before you can use dirculese, you will need to create a configuration file. By d
 ```
 
 {
-  "Folders": [
+  "Directories": [
     {
       "Path": "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
       "Rules": [

@@ -4,13 +4,13 @@ Usage:
 	dirculese [flag]
 The flags are:
 	-silent
-		suppresses all messages to standard out and standard error (they are still logged)
+		suppress all messages to standard out and standard error (they are still logged)
 	-config /full/path/to/your/config.json
 		the full path to a dirculese configuration file
 Before you can use dirculese, you will need to create a configuration file. By default, dirculese will try to load a
 file called .dirculese.json in your home directory. Here's what a basic configuration file looks like:
 	{
-	  "Folders": [
+	  "Directories": [
 		{
 		  "Path": "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
 		  "Rules": [
@@ -30,13 +30,13 @@ file called .dirculese.json in your home directory. Here's what a basic configur
 		}
 	  ]
 	}
-This simple configuration only has a single directory with a single rule, but you can have as many directories and rules
-as you want (dirculese will parse them in sequence).
+This configuration only has a single directory with a single rule, but you can have as many directories and rules as you
+want (dirculese will parse them in sequence).
 If want to place your configuration file somewhere else, just call dirculese with the -config flag:
 	dirculese -config /full/path/to/your/config.json
 By default, dirculese is very verbose about what it's doing, but you can tell it to be silent with the -silent flag:
 	dirculese -silent
-Even when running silently, dirculese logs everything to dirculese.log which it saves in your home directory.
+Even when running silently, dirculese logs everything to dirculese.log which it saves to your home directory.
 Dirculese returns an exit code of 0 if everything went well and an exit code of 1 if something went wrong.
 */
 package main
@@ -70,18 +70,18 @@ var (
 
 func init() {
 	flag.StringVar(&flagConfig, "config", "", "the full path to a dirculese configuration file")
-	flag.BoolVar(&flagSilent, "silent", false, "suppresses all messages to standard out and standard error (they are still logged)")
+	flag.BoolVar(&flagSilent, "silent", false, "suppress all messages to standard out and standard error (they are still logged)")
 	flag.Parse()
 }
 
-// FoldersConfig is a simple struct that is used to map to the top-level array of folders in a dirculese JSON
+// DirectoriesConfig is a simple struct that is used to map to the top-level array of directories in a dirculese JSON
 // configuration file.
-type FoldersConfig struct {
-	Folders []FolderConfig
+type DirectoriesConfig struct {
+	Directories []DirectoryConfig
 }
 
-// FolderConfig is a simple struct that is used to map to a single folder in a dirculese JSON configuration file.
-type FolderConfig struct {
+// DirectoryConfig is a simple struct that is used to map to a single directory in a dirculese JSON configuration file.
+type DirectoryConfig struct {
 	Rules []RuleConfig
 	Path  string
 }
@@ -98,22 +98,22 @@ type RuleConfig struct {
 	DateMin    int
 }
 
-// Folder is the basic type of a managed folder. Folders are managed based on the Rule items in the Folder.rules slice,
-// which are executed sequentially by Folder.Ruler(). The Folder.path string should be a valid, accessible directory,
-// which is validated by calling Folder.CheckPath()
-type Folder struct {
+// Directory is the basic type of a managed directory. Directories are managed based on the Rule items in the
+// Directory.rules slice, which are executed sequentially by Directory.Ruler(). The Directory.path string should be an
+// existing, accessible directory, which is validated by calling Directory.CheckPath()
+type Directory struct {
 	rules []Rule
 	path  string
 }
 
-// Rule defines the criteria for managing a folder. Rule.source is a pointer to a Folder representation of the source
-// directory and Rule.target is a pointer to a Folder representation of the target directory. Any files in the source
-// directory that match the rule's criteria will be moved into the target directory, unless Rule.delete is true, in
-// which case the files will be deleted instead. Rule.handler is the name of the handler function that should be used to
-// execute the rule's logic, and is parsed by Rule.Handler().
+// Rule defines a single criteria for managing a directory. Rule.source is a pointer to a Directory representation of
+// the source directory and Rule.target is a pointer to a Directory representation of the target directory. Any files in
+// the source directory that match the rule's criteria will be moved into the target directory, unless Rule.delete is
+// true, in which case the files will be deleted instead. Rule.handler is the name of the handler function that should
+// be used to execute the rule's logic, and is parsed by Rule.Handler().
 type Rule struct {
-	source     *Folder
-	target     *Folder
+	source     *Directory
+	target     *Directory
 	delete     bool
 	handler    string
 	extensions []string
@@ -123,31 +123,34 @@ type Rule struct {
 	dateMin    int
 }
 
-// CheckPath tests to see if a folder's f.path points to a valid directory on the filesystem.
-func (f *Folder) CheckPath() (err error) {
+// CheckPath tests to see if a directory's d.path points to an existing directory on the filesystem.
+func (d *Directory) CheckPath() (err error) {
 	var fileInfo os.FileInfo
-	if f.path == "" {
+	if d.path == "" {
 		return errors.New("empty paths are not valid")
 	}
-	fileInfo, err = os.Stat(f.path)
+	fileInfo, err = os.Stat(d.path)
 	if err != nil {
 		return errors.New(err.Error())
 	}
 	if !fileInfo.IsDir() {
-		return errors.New(f.path + " is not a directory")
+		return errors.New(d.path + " is not a directory")
 	}
 	return
 }
 
-// Contents returns the contents of a folder's f.path.
-func (f *Folder) Contents() (contents []os.FileInfo, err error) {
-	contents, err = ioutil.ReadDir(f.path)
+// Contents returns the contents of a directory's d.path.
+func (d *Directory) Contents() (contents []os.FileInfo, err error) {
+	contents, err = ioutil.ReadDir(d.path)
+	if err != nil {
+		err = errors.New(err.Error())
+	}
 	return
 }
 
-// Ruler sequentially executes the individuals rules in a folder's f.rules slice.
-func (f *Folder) Ruler() (err error) {
-	for _, element := range f.rules {
+// Ruler sequentially executes the individuals rules in a directory's d.rules slice.
+func (d *Directory) Ruler() (err error) {
+	for _, element := range d.rules {
 		err = element.Handler()
 		if err != nil {
 			return errors.New(err.Error())
@@ -176,26 +179,29 @@ func (r *Rule) ExtensionHandler() (err error) {
 		return errors.New("you need to specify at least one extension")
 	}
 	if r.delete != true {
-		if r.target == new(Folder) {
+		if r.target == new(Directory) {
 			return errors.New("you need to specify a target directory")
 		}
 	}
+
 	err = r.target.CheckPath()
 	if err != nil {
 		return errors.New(err.Error())
 	}
+
 	fileExtensions := make(map[string]string)
 	for _, extension := range r.extensions {
 		fileExtensions[extension] = extension
 	}
+
 	files, err := r.source.Contents()
 	if err != nil {
 		return errors.New(err.Error())
 	}
+
 	for _, f := range files {
 		if !f.IsDir() {
 			thisExtension := strings.TrimLeft(filepath.Ext(f.Name()), ".")
-
 			if _, exists := fileExtensions[thisExtension]; exists {
 				if r.delete {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
@@ -235,30 +241,33 @@ func GetConfigFilePath() (path string, err error) {
 	return
 }
 
-// GetConfigStruct loads a JSON file from the given path on the filesystem and maps its contents to a FoldersConfig
+// GetConfigStruct loads a JSON file from the given path on the filesystem and maps its contents to a DirectoriesConfig
 // struct.
-func GetConfigStruct(path string) (conf FoldersConfig, err error) {
-	conf = FoldersConfig{}
+func GetConfigStruct(path string) (conf DirectoriesConfig, err error) {
+	conf = DirectoriesConfig{}
 	confFile, err := os.Open(path)
 	if err != nil {
 		return
 	}
 	decoder := json.NewDecoder(confFile)
 	decoder.Decode(&conf)
+	if len(conf.Directories) < 1 {
+		err = errors.New("your configuration file should include at least one directory")
+	}
 	return
 }
 
-// GetFolders creates an array of Folders (including the rules associated with each one) based on the contents of a
-// FoldersConfig struct.
-func GetFolders(c FoldersConfig) (folders []Folder) {
-	for _, folderConf := range c.Folders {
-		f := Folder{}
-		f.path = folderConf.Path
-		for _, ruleConf := range folderConf.Rules {
+// GetDirectories creates an array of Directories (including the rules associated with each one) based on the contents
+// of a DirectoriesConfig struct.
+func GetDirectories(config DirectoriesConfig) (directories []Directory) {
+	for _, directoryConf := range config.Directories {
+		d := Directory{}
+		d.path = directoryConf.Path
+		for _, ruleConf := range directoryConf.Rules {
 			rule := Rule{}
-			targetFolder := Folder{path: ruleConf.Target}
-			rule.source = &f
-			rule.target = &targetFolder
+			targetDirectory := Directory{path: ruleConf.Target}
+			rule.source = &d
+			rule.target = &targetDirectory
 			rule.delete = ruleConf.Delete
 			rule.handler = ruleConf.Handler
 			rule.extensions = ruleConf.Extensions
@@ -266,16 +275,16 @@ func GetFolders(c FoldersConfig) (folders []Folder) {
 			rule.sizeMin = ruleConf.SizeMin
 			rule.dateMax = ruleConf.DateMax
 			rule.dateMin = ruleConf.DateMin
-			f.rules = append(f.rules, rule)
+			d.rules = append(d.rules, rule)
 		}
-		folders = append(folders, f)
+		directories = append(directories, d)
 	}
 	return
 }
 
 // GetSampleConfig generates a sample dirculese configuration file.
 func GetSampleConfig() (config string) {
-	config = `{"Folders":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
+	config = `{"Directories":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
 	return
 }
 
@@ -303,7 +312,7 @@ func ValidateConfigFile(path string) (err error) {
 		return errors.New(err.Error())
 	}
 	if !json.Valid(confContents) {
-		return errors.New(err.Error())
+		return errors.New("the JSON in your configuration file cannot be validated")
 	}
 	return
 }
@@ -359,18 +368,19 @@ func main() {
 	if err != nil {
 		message := "Whoops, your configuration file '"
 		message += configFilePath
-		message += "' is incorrectly formatted. "
-		message += "Here's what a valid Dirculese configuration file looks like: "
+		message += "' is incorrectly formatted: "
+		message += err.Error()
+		message += ". Here's what a valid Dirculese configuration file looks like: "
 		message += GetSampleConfig()
 		message += " See https://github.com/moismailzai/dirculese for more information."
 		logError.Fatalln(message)
 	}
 
-	// use the configuration struct to build folders and rules
-	folders := GetFolders(configStruct)
+	// use the configuration struct to build directories and rules
+	directories := GetDirectories(configStruct)
 
-	for _, folder := range folders {
-		err := folder.Ruler()
+	for _, directory := range directories {
+		err := directory.Ruler()
 		if err != nil {
 			logError.Fatalln(err.Error())
 		}
