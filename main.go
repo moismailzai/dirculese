@@ -13,21 +13,23 @@ import (
 	"strings"
 )
 
+// DefaultConfigFile is the name of the file in the user's home directory that dirculese will use for its configuration.
+// DefaultLogFile is the name of the file in the user's home directory that dirculese will log to.
 const (
 	DefaultConfigFile = ".dirculese.json"
 	DefaultLogFile    = "dirculese.log"
 )
 
 var (
-	FlagConfig  string
-	FlagSilent  bool
+	flagConfig  string
+	flagSilent  bool
 	logStandard *log.Logger
 	logError    *log.Logger
 )
 
 func init() {
-	flag.StringVar(&FlagConfig, "config", "", "the full path to your dirculese configuration file")
-	flag.BoolVar(&FlagSilent, "silent", false, "this flag suppresses all messages to standard out and standard error (they are still logged)")
+	flag.StringVar(&flagConfig, "config", "", "the full path to your dirculese configuration file")
+	flag.BoolVar(&flagSilent, "silent", false, "this flag suppresses all messages to standard out and standard error (they are still logged)")
 	flag.Parse()
 }
 
@@ -161,15 +163,14 @@ func (r *Rule) ExtensionHandler() (err error) {
 				}
 				if err != nil {
 					return errors.New(err.Error())
-				} else {
-					var message string
-					if r.delete {
-						message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
-					} else {
-						message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
-					}
-					logStandard.Println(message)
 				}
+				var message string
+				if r.delete {
+					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
+				} else {
+					message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
+				}
+				logStandard.Println(message)
 			}
 		}
 	}
@@ -181,14 +182,14 @@ func (r *Rule) ExtensionHandler() (err error) {
 // path separator and the constant DefaultConfigFile.
 func GetConfigFilePath() (path string, err error) {
 	path = ""
-	if FlagConfig == "" {
+	if flagConfig == "" {
 		path, err = GetUserHome()
 		if err != nil {
 			return
 		}
 		path += string(os.PathSeparator) + DefaultConfigFile
 	} else {
-		path = FlagConfig
+		path = flagConfig
 	}
 	return
 }
@@ -279,7 +280,7 @@ func main() {
 	defer logFile.Close()
 
 	// suppress standard output if the -silent flag was used
-	if FlagSilent {
+	if flagSilent {
 		logStandard = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
 		logError = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
 	} else {

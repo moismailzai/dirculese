@@ -53,8 +53,8 @@ func TestGetConfigFilePath(t *testing.T) {
 		t.Errorf("Configuration file path mismatch. Got '%v', want '%v'", got, want)
 	}
 
-	FlagConfig = "TEST"
-	want = FlagConfig
+	flagConfig = "TEST"
+	want = flagConfig
 	got, _ = GetConfigFilePath()
 	if got != want {
 		t.Errorf("Configuration file path mismatch. Got '%v', want '%v'", got, want)
@@ -144,7 +144,7 @@ func TestValidateConfigFile(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
 	dir = strings.TrimRight(dir, "main_test.go")
 
-	var want error = nil
+	var want error
 	got := ValidateConfigFile(dir + "testing/dirculese.test.json")
 	if got != want {
 		t.Errorf("Couldn't validate config file. Got '%v', want '%v'", got, want)
