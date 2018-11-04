@@ -1,4 +1,44 @@
-// Command dirculese organizes your directories and keeps your desktop clutter-free.
+/*
+dirculese organizes your directories and keeps your desktop clutter-free.
+Usage:
+	dirculese [flag]
+The flags are:
+	-silent
+		suppresses all messages to standard out and standard error (they are still logged)
+	-config /full/path/to/your/config.json
+		the full path to a dirculese configuration file
+Before you can use dirculese, you will need to create a configuration file. By default, dirculese will try to load a
+file called .dirculese.json in your home directory. Here's what a basic configuration file looks like:
+	{
+	  "Folders": [
+		{
+		  "Path": "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
+		  "Rules": [
+			{
+			  "Target": "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved",
+			  "Delete": false,
+			  "Handler": "ExtensionHandler",
+			  "Extensions": [
+				"png"
+			  ],
+			  "SizeMax": 0,
+			  "SizeMin": 0,
+			  "DateMax": 0,
+			  "DateMin": 0
+			}
+		  ]
+		}
+	  ]
+	}
+This simple configuration only has a single directory with a single rule, but you can have as many directories and rules
+as you want (dirculese will parse them in sequence).
+If want to place your configuration file somewhere else, just call dirculese with the -config flag:
+	dirculese -config /full/path/to/your/config.json
+By default, dirculese is very verbose about what it's doing, but you can tell it to be silent with the -silent flag:
+	dirculese -silent
+Even when running silently, dirculese logs everything to dirculese.log which it saves in your home directory.
+Dirculese returns an exit code of 0 if everything went well and an exit code of 1 if something went wrong.
+*/
 package main
 
 import (
@@ -29,8 +69,8 @@ var (
 )
 
 func init() {
-	flag.StringVar(&flagConfig, "config", "", "the full path to your dirculese configuration file")
-	flag.BoolVar(&flagSilent, "silent", false, "this flag suppresses all messages to standard out and standard error (they are still logged)")
+	flag.StringVar(&flagConfig, "config", "", "the full path to a dirculese configuration file")
+	flag.BoolVar(&flagSilent, "silent", false, "suppresses all messages to standard out and standard error (they are still logged)")
 	flag.Parse()
 }
 
