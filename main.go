@@ -1,5 +1,5 @@
 /*
-dirculese organizes your directories and keeps your desktop clutter-free.
+dirculese organizes your directories so you don't have to.
 Usage:
 	dirculese [flag]
 The flags are:

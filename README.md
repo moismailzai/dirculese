@@ -1,7 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/moismailzai/dirculese)](https://goreportcard.com/report/github.com/moismailzai/dirculese) [![Build Status](https://travis-ci.org/moismailzai/dirculese.svg?branch=master)](https://travis-ci.org/moismailzai/dirculese) [![GoDoc](https://godoc.org/github.com/moismailzai/dirculese?status.svg)](https://godoc.org/github.com/moismailzai/dirculese) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-
-Dirculese organizes your directories and keeps your desktop clutter-free.
+![Dirculese logo which depicts a standard folder icon with a muscular arm attached on the left ](dirculese.png "hero of song and story")
+Dirculese organizes your directories so you don't have to.
 
 ## Installation
 
