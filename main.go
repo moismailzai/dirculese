@@ -153,7 +153,7 @@ func (r *Rule) ExtensionHandler() (err error) {
 		if !f.IsDir() {
 			thisExtension := strings.TrimLeft(filepath.Ext(f.Name()), ".")
 
-			if _, exists := fileExtensions[thisExtension];  exists {
+			if _, exists := fileExtensions[thisExtension]; exists {
 				if r.delete {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
 				} else {
