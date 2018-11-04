@@ -1,11 +1,11 @@
 package main
 
 import (
-	"os"
 	"os/user"
 	"runtime"
 	"strings"
 	"testing"
+	"os"
 )
 
 var (
@@ -42,6 +42,23 @@ var (
 
 func init() {
 	folders[0].rules[0].source = &folders[0]
+}
+
+func TestGetConfigFilePath(t *testing.T) {
+	userHome, _ := GetUserHome()
+
+	want := userHome + string(os.PathSeparator) + DefaultConfigFile
+	got, _ := GetConfigFilePath()
+	if got != want {
+		t.Errorf("Configuration file path mismatch. Got '%v', want '%v'", got, want)
+	}
+
+	FlagConfig = "TEST"
+	want = FlagConfig
+	got, _ = GetConfigFilePath()
+	if got != want {
+		t.Errorf("Configuration file path mismatch. Got '%v', want '%v'", got, want)
+	}
 }
 
 func TestGetConfigStruct(t *testing.T) {
@@ -120,23 +137,6 @@ func TestGetUserHome(t *testing.T) {
 	got, _ := GetUserHome()
 	if got != want {
 		t.Errorf("User home mismatch. Got '%v', want '%v'", got, want)
-	}
-}
-
-func TestGetConfigFilePath(t *testing.T) {
-	userHome, _ := GetUserHome()
-
-	want := userHome + string(os.PathSeparator) + DefaultConfigFile
-	got, _ := GetConfigFilePath()
-	if got != want {
-		t.Errorf("Configuration file path mismatch. Got '%v', want '%v'", got, want)
-	}
-
-	FlagConfig = "TEST"
-	want = FlagConfig
-	got, _ = GetConfigFilePath()
-	if got != want {
-		t.Errorf("Configuration file path mismatch. Got '%v', want '%v'", got, want)
 	}
 }
 
