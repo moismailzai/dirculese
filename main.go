@@ -1,3 +1,4 @@
+// Command dirculese organizes your directories and keeps your desktop clutter-free.
 package main
 
 import (
