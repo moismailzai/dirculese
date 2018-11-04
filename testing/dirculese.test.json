@@ -1,0 +1,21 @@
+{
+  "Folders": [
+    {
+      "Path": "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
+      "Rules": [
+        {
+          "Target": "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved",
+          "Delete": false,
+          "Handler": "ExtensionHandler",
+          "Extensions": [
+            "png"
+          ],
+          "SizeMax": 0,
+          "SizeMin": 0,
+          "DateMax": 0,
+          "DateMin": 0
+        }
+      ]
+    }
+  ]
+}
