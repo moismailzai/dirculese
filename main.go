@@ -118,7 +118,7 @@ func (f *Folder) Ruler() (err error) {
 func (r *Rule) Handler() (err error) {
 	switch r.handler {
 	case "ExtensionHandler":
-		r.ExtensionHandler()
+		err = r.ExtensionHandler()
 	default:
 		err = errors.New("unrecognized handler")
 	}
