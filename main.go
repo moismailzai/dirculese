@@ -80,6 +80,39 @@ type Rule struct {
 	dateMin    int
 }
 
+// CheckPath tests to see if a folder's f.path points to a valid directory on the filesystem.
+func (f *Folder) CheckPath() (err error) {
+	var fileInfo os.FileInfo
+	if f.path == "" {
+		return errors.New("empty paths are not valid")
+	}
+	fileInfo, err = os.Stat(f.path)
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	if !fileInfo.IsDir() {
+		return errors.New(f.path + " is not a directory")
+	}
+	return
+}
+
+// Contents returns the contents of a folder's f.path.
+func (f *Folder) Contents() (contents []os.FileInfo, err error) {
+	contents, err = ioutil.ReadDir(f.path)
+	return
+}
+
+// Ruler sequentially executes the individuals rules in a folder's f.rules slice.
+func (f *Folder) Ruler() (err error) {
+	for _, element := range f.rules {
+		err = element.Handler()
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+	return
+}
+
 // Handler reads a rule's r.handler property and maps it to a predefined handler. This allows rules that are defined in
 // text configuration files to be easily mapped to handler methods.
 func (r *Rule) Handler() (err error) {
@@ -142,35 +175,19 @@ func (r *Rule) ExtensionHandler() (err error) {
 	return
 }
 
-// Ruler sequentially executes the individuals rules in a folder's f.rules slice.
-func (f *Folder) Ruler() (err error) {
-	for _, element := range f.rules {
-		err = element.Handler()
+// GetConfigFilePath returns the full path to the user's dirculese configuration file. If a -config flag was specified,
+// its argument will be used verbatim. Otherwise, the path to the user's home directory will be prepended to the OS's
+// path separator and the constant DefaultConfigFile.
+func GetConfigFilePath() (path string, err error) {
+	path = ""
+	if FlagConfig == "" {
+		path, err = GetUserHome()
 		if err != nil {
-			return errors.New(err.Error())
+			return
 		}
-	}
-	return
-}
-
-// Contents returns the contents of a folder's f.path.
-func (f *Folder) Contents() (contents []os.FileInfo, err error) {
-	contents, err = ioutil.ReadDir(f.path)
-	return
-}
-
-// CheckPath tests to see if a folder's f.path points to a valid directory on the filesystem.
-func (f *Folder) CheckPath() (err error) {
-	var fileInfo os.FileInfo
-	if f.path == "" {
-		return errors.New("empty paths are not valid")
-	}
-	fileInfo, err = os.Stat(f.path)
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	if !fileInfo.IsDir() {
-		return errors.New(f.path + " is not a directory")
+		path += string(os.PathSeparator) + DefaultConfigFile
+	} else {
+		path = FlagConfig
 	}
 	return
 }
@@ -213,35 +230,18 @@ func GetFolders(c FoldersConfig) (folders []Folder) {
 	return
 }
 
-// GetUserHome returns the runtime user's home directory.
-func GetUserHome() (home string, err error) {
-	currentUser, _ := user.Current()
-	home = currentUser.HomeDir
-	if home == "" {
-		err = errors.New("can't find your home directory (try using the -config flag with the full path to your config file)")
-	}
-	return
-}
-
 // GetSampleConfig generates a sample dirculese configuration file.
 func GetSampleConfig() (config string) {
 	config = `{"Folders":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
 	return
 }
 
-// GetConfigFilePath returns the full path to the user's dirculese configuration file. If a -config flag was specified,
-// its argument will be used verbatim. Otherwise, the path to the user's home directory will be prepended to the OS's
-// path separator and the constant DefaultConfigFile.
-func GetConfigFilePath() (path string, err error) {
-	path = ""
-	if FlagConfig == "" {
-		path, err = GetUserHome()
-		if err != nil {
-			return
-		}
-		path += string(os.PathSeparator) + DefaultConfigFile
-	} else {
-		path = FlagConfig
+// GetUserHome returns the runtime user's home directory.
+func GetUserHome() (home string, err error) {
+	currentUser, _ := user.Current()
+	home = currentUser.HomeDir
+	if home == "" {
+		err = errors.New("can't find your home directory (try using the -config flag with the full path to your config file)")
 	}
 	return
 }
