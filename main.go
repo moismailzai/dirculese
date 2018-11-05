@@ -180,34 +180,44 @@ func (r *Rule) ExtensionHandler() (err error) {
 		return errors.New("you need to specify at least one extension")
 	}
 
+	// make sure the path we're going to be moving items into exists and is accessible
 	err = r.target.CheckPath()
 	if err != nil {
 		return errors.New(err.Error())
 	}
 
+	// make a map of all the extensions so lookups are easier later
 	fileExtensions := make(map[string]string)
 	for _, extension := range r.extensions {
 		fileExtensions[extension] = extension
 	}
 
+	// get a list of all the items in the directory we're managing
 	files, err := r.source.Contents()
 	if err != nil {
 		return errors.New(err.Error())
 	}
 
+	// for each item
 	for _, f := range files {
+		// if it's a file
 		if !f.IsDir() {
 			var message string
 			fileExtension := strings.TrimLeft(filepath.Ext(f.Name()), ".")
+			// and if this file's extension is in the map we created earlier
 			if _, extensionExists := fileExtensions[fileExtension]; extensionExists {
+				// if the delete flag is set, delete the file
 				if r.delete {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
 					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
 				} else {
+					// otherwise, check to see if a file by this name exists in the destination directory, if not, move it
 					if _, e := os.Stat(r.target.path + string(os.PathSeparator) + f.Name()); os.IsNotExist(e) {
 						err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
 						message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 					} else {
+						// if so, try appending numbers to the end of the filename and check if a file by the new name exists
+						// give up after 9998 tries (entirely arbitrary)
 						for i := 0; i < 9999; i++ {
 							newFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
 							if _, e := os.Stat(r.target.path + string(os.PathSeparator) + newFileName); os.IsNotExist(e) {
