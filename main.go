@@ -209,13 +209,13 @@ func (r *Rule) ExtensionHandler() (err error) {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
 					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
 				} else {
-					if _, err := os.Stat(r.target.path + string(os.PathSeparator) + f.Name()); os.IsNotExist(err) {
+					if _, e := os.Stat(r.target.path + string(os.PathSeparator) + f.Name()); os.IsNotExist(e) {
 						err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
 						message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 					} else {
 						for i := 0; i < 9999; i++ {
 							newFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
-							if _, err := os.Stat(r.target.path + string(os.PathSeparator) + newFileName); os.IsNotExist(err) {
+							if _, e := os.Stat(r.target.path + string(os.PathSeparator) + newFileName); os.IsNotExist(e) {
 								err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+newFileName)
 								message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (renamed to " + newFileName + ") because a file with the same name already exists there."
 								break
