@@ -66,6 +66,7 @@ func TestDirectory_CheckPath(t *testing.T) {
 	}
 
 }
+
 func TestDirectory_Contents(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
 	dir = strings.TrimRight(dir, "main_test.go")
@@ -81,6 +82,21 @@ func TestDirectory_Contents(t *testing.T) {
 
 	if errWant != errGot {
 		t.Errorf("Couldn't get the contents of directory "+testDirectory.path+". Got '%v', want '%v'", got, want)
+	}
+}
+
+func TestDirectory_Ruler(t *testing.T) {
+	want := "you need to specify at least one extension"
+
+	testDirectory := Directory{}
+	testDirectory.rules = append(testDirectory.rules, Rule{})
+	testDirectory.rules[0].handler = "ExtensionHandler"
+
+	err := testDirectory.Ruler()
+	got := err.Error()
+
+	if want != got {
+		t.Errorf("The correct handler was not run. Got '%v', want '%v'", got, want)
 	}
 }
 
@@ -190,7 +206,7 @@ func TestRule_Handler(t *testing.T) {
 	got := err.Error()
 
 	if want != got {
-		t.Errorf("The correct handler was not rune. Got '%v', want '%v'", got, want)
+		t.Errorf("The correct handler was not run. Got '%v', want '%v'", got, want)
 	}
 }
 
