@@ -180,6 +180,20 @@ func TestGetUserHome(t *testing.T) {
 	}
 }
 
+func TestRule_Handler(t *testing.T) {
+	want := "you need to specify at least one extension"
+
+	testRule := Rule{}
+	testRule.handler = "ExtensionHandler"
+
+	err := testRule.Handler()
+	got := err.Error()
+
+	if want != got {
+		t.Errorf("The correct handler was not rune. Got '%v', want '%v'", got, want)
+	}
+}
+
 func TestValidateConfigFile(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
 	dir = strings.TrimRight(dir, "main_test.go")
