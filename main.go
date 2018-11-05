@@ -51,6 +51,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -201,28 +202,32 @@ func (r *Rule) ExtensionHandler() (err error) {
 
 	for _, f := range files {
 		if !f.IsDir() {
-			thisExtension := strings.TrimLeft(filepath.Ext(f.Name()), ".")
-			if _, extensionExists := fileExtensions[thisExtension]; extensionExists {
-				fileExists := false
+			var message string
+			fileExtension := strings.TrimLeft(filepath.Ext(f.Name()), ".")
+			if _, extensionExists := fileExtensions[fileExtension]; extensionExists {
 				if r.delete {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
+					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
 				} else {
 					if _, err := os.Stat(r.target.path + string(os.PathSeparator) + f.Name()); os.IsNotExist(err) {
 						err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
+						message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 					} else {
-						fileExists = true
+						for i := 0; i < 9999; i++ {
+							newFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
+							if _, err := os.Stat(r.target.path + string(os.PathSeparator) + newFileName); os.IsNotExist(err) {
+								err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+newFileName)
+								message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (renamed to " + newFileName + ") because a file with the same name already exists there."
+								break
+							}
+							if i == 9998 {
+								message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already exists there."
+							}
+						}
 					}
 				}
 				if err != nil {
 					return errors.New(err.Error())
-				}
-				var message string
-				if r.delete {
-					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
-				} else if fileExists {
-					message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already extensionExists there."
-				} else {
-					message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 				}
 				logStandard.Println(message)
 			}
