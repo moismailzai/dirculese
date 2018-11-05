@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"os/user"
 	"runtime"
@@ -42,6 +43,24 @@ var (
 
 func init() {
 	directories[0].rules[0].source = &directories[0]
+}
+
+func TestDirectory_Contents(t *testing.T) {
+	_, dir, _, _ := runtime.Caller(0)
+	dir = strings.TrimRight(dir, "main_test.go")
+
+	testDirectory := Directory{path: dir + "testing"}
+
+	want, errWant := ioutil.ReadDir(dir + "testing")
+	got, errGot := testDirectory.Contents()
+
+	if len(want) != len(got) {
+		t.Errorf("Didn't get the right number of items from "+testDirectory.path+". Got '%v', want '%v'", len(got), len(want))
+	}
+
+	if errWant != errGot {
+		t.Errorf("Couldn't get the contents of directory "+testDirectory.path+". Got '%v', want '%v'", got, want)
+	}
 }
 
 func TestGetConfigFilePath(t *testing.T) {
