@@ -179,11 +179,6 @@ func (r *Rule) ExtensionHandler() (err error) {
 	if len(r.extensions) < 1 {
 		return errors.New("you need to specify at least one extension")
 	}
-	if r.delete != true {
-		if r.target == new(Directory) {
-			return errors.New("you need to specify a target directory")
-		}
-	}
 
 	err = r.target.CheckPath()
 	if err != nil {
