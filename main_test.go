@@ -45,6 +45,27 @@ func init() {
 	directories[0].rules[0].source = &directories[0]
 }
 
+func TestDirectory_CheckPath(t *testing.T) {
+	_, dir, _, _ := runtime.Caller(0)
+	dir = strings.TrimRight(dir, "main_test.go")
+
+	testDirectoryPass := Directory{path: dir + "testing"}
+	testDirectoryFail := Directory{path: dir + "PATH-DOES-NOT-EXIST"}
+
+	var want error
+	got := testDirectoryPass.CheckPath()
+
+	if want != got {
+		t.Errorf("Valid directory failed check: "+testDirectoryPass.path+". Got '%v', want '%v'", got, want)
+	}
+
+	got = testDirectoryFail.CheckPath()
+
+	if want == got {
+		t.Errorf("Invalid directory passed check: "+testDirectoryFail.path+". Got '%v'", got)
+	}
+
+}
 func TestDirectory_Contents(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
 	dir = strings.TrimRight(dir, "main_test.go")
