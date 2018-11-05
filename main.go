@@ -202,11 +202,16 @@ func (r *Rule) ExtensionHandler() (err error) {
 	for _, f := range files {
 		if !f.IsDir() {
 			thisExtension := strings.TrimLeft(filepath.Ext(f.Name()), ".")
-			if _, exists := fileExtensions[thisExtension]; exists {
+			if _, extensionExists := fileExtensions[thisExtension]; extensionExists {
+				fileExists := false
 				if r.delete {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
 				} else {
-					err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
+					if _, err := os.Stat(r.target.path + string(os.PathSeparator) + f.Name()); os.IsNotExist(err) {
+						err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
+					} else {
+						fileExists = true
+					}
 				}
 				if err != nil {
 					return errors.New(err.Error())
@@ -214,6 +219,8 @@ func (r *Rule) ExtensionHandler() (err error) {
 				var message string
 				if r.delete {
 					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
+				} else if fileExists {
+					message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already extensionExists there."
 				} else {
 					message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 				}
