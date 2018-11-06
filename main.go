@@ -318,7 +318,7 @@ func GetUserHome() (home string, err error) {
 // ValidateConfigFile checks to see if the configuration file at the provided path exists on the filesystem and is in
 // JSON format.
 func ValidateConfigFile(path string) (err error) {
-	configFile := new(os.File)
+	var configFile *os.File
 	configFile, err = os.Open(path)
 	if err != nil {
 		return errors.New(err.Error())
