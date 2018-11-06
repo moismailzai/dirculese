@@ -5,6 +5,8 @@ go:
   - release
   - tip
 
+install: true
+
 matrix:
   allow_failures:
     - go: tip
