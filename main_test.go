@@ -47,7 +47,7 @@ func init() {
 
 func TestDirectory_CheckPath(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_test.go")
+	dir = strings.TrimRight(dir, "main_tes.go")
 
 	testDirectoryPass := Directory{path: dir + "testing"}
 	testDirectoryFail := Directory{path: dir + "PATH-DOES-NOT-EXIST"}
@@ -69,7 +69,7 @@ func TestDirectory_CheckPath(t *testing.T) {
 
 func TestDirectory_Contents(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_test.go")
+	dir = strings.TrimRight(dir, "main_tes.go")
 
 	testDirectory := Directory{path: dir + "testing"}
 
@@ -212,7 +212,7 @@ func TestRule_Handler(t *testing.T) {
 
 func TestValidateConfigFile(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_test.go")
+	dir = strings.TrimRight(dir, "main_tes.go")
 
 	var want error
 	got := ValidateConfigFile(dir + "testing/dirculese.test.json")
