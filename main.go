@@ -73,6 +73,22 @@ func init() {
 	flag.StringVar(&flagConfig, "config", "", "the full path to a dirculese configuration file")
 	flag.BoolVar(&flagSilent, "silent", false, "suppress all messages to standard out and standard error (they are still logged)")
 	flag.Parse()
+
+	// setup logging
+	userHome, _ := GetUserHome()
+	logFile, err := os.OpenFile(userHome+string(os.PathSeparator)+DefaultLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalln("Failed to open log file '"+DefaultLogFile+"': ", err.Error())
+	}
+
+	// suppress standard output if the -silent flag was used
+	if flagSilent {
+		logStandard = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
+		logError = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
+	} else {
+		logStandard = log.New(io.MultiWriter(logFile, os.Stdout), "", log.Ldate|log.Ltime|log.Lshortfile)
+		logError = log.New(io.MultiWriter(logFile, os.Stderr), "", log.Ldate|log.Ltime|log.Lshortfile)
+	}
 }
 
 // DirectoriesConfig is a simple struct that is used to map to the top-level array of directories in a dirculese JSON
@@ -335,25 +351,6 @@ func ValidateConfigFile(path string) (err error) {
 }
 
 func main() {
-
-	// setup logging
-	userHome, _ := GetUserHome()
-	logFile, err := os.OpenFile(userHome+string(os.PathSeparator)+DefaultLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-
-	if err != nil {
-		log.Fatalln("Failed to open log file '"+DefaultLogFile+"': ", err.Error())
-	}
-
-	defer logFile.Close()
-
-	// suppress standard output if the -silent flag was used
-	if flagSilent {
-		logStandard = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
-		logError = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
-	} else {
-		logStandard = log.New(io.MultiWriter(logFile, os.Stdout), "", log.Ldate|log.Ltime|log.Lshortfile)
-		logError = log.New(io.MultiWriter(logFile, os.Stderr), "", log.Ldate|log.Ltime|log.Lshortfile)
-	}
 
 	// load the configuration file
 	configFilePath, err := GetConfigFilePath()
