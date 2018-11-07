@@ -253,7 +253,7 @@ func (r *Rule) ExtensionHandler() (err error) {
 									message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already exists there."
 								}
 							}
-						// if there was an error, let's register it as such
+							// if there was an error, let's register it as such
 						} else {
 							err = errors.New("Couldn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (" + newFileLocationStatErr.Error() + ").")
 						}
