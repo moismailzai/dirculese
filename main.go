@@ -196,10 +196,13 @@ func (r *Rule) ExtensionHandler() (err error) {
 		return errors.New("you need to specify at least one extension")
 	}
 
-	// make sure the path we're going to be moving items into exists and is accessible
-	err = r.target.CheckPath()
-	if err != nil {
-		return errors.New(err.Error())
+	// make sure the path we're going to be moving items into exists and is accessible (only necessary if r.delete is
+	// false
+	if !r.delete {
+		err = r.target.CheckPath()
+		if err != nil {
+			return errors.New(err.Error())
+		}
 	}
 
 	// make a map of all the extensions so lookups are easier later
@@ -250,7 +253,7 @@ func (r *Rule) ExtensionHandler() (err error) {
 									message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already exists there."
 								}
 							}
-							// if there was an error, let's register it as such
+						// if there was an error, let's register it as such
 						} else {
 							err = errors.New("Couldn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (" + newFileLocationStatErr.Error() + ").")
 						}
