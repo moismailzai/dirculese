@@ -21,7 +21,7 @@ script:
   - go test -race -coverprofile=coverage.txt -covermode=atomic
   - go vet ./...
   - megacheck ./...
-  - gocyclo -over 15 $GO_FILES
+  - gocyclo -over 19 $GO_FILES
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
