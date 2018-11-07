@@ -227,24 +227,32 @@ func (r *Rule) ExtensionHandler() (err error) {
 					err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
 					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
 				} else {
-					// otherwise, check to see if a file by this name exists in the destination directory, if not, move it
+					// otherwise, stat the full path of the new file we want to create
 					_, newFileLocationStatErr := os.Stat(r.target.path + string(os.PathSeparator) + f.Name())
+					// and check for an IsNotExist error, which means a file by that name doesn't already exist in the
+					// new location and we're safe to move it there
 					if os.IsNotExist(newFileLocationStatErr) {
 						err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
 						message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 					} else {
-						// if so, try appending numbers to the end of the filename and check if a file by the new name exists
-						// give up after 9998 tries (entirely arbitrary)
-						for i := 0; i < 9999; i++ {
-							newFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
-							if _, e := os.Stat(r.target.path + string(os.PathSeparator) + newFileName); os.IsNotExist(e) {
-								err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+newFileName)
-								message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (renamed to " + newFileName + ") because a file with the same name already exists there."
-								break
+						// if there was no error, it means a file by that name does already exist in the new location,
+						// so lets try appending numbers to the end of the filename and redo the stat check up to 9998
+						// times (which is an entirely arbitrary limit)
+						if newFileLocationStatErr == nil {
+							for i := 0; i < 9999; i++ {
+								appendedFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
+								if _, e := os.Stat(r.target.path + string(os.PathSeparator) + appendedFileName); os.IsNotExist(e) {
+									err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+appendedFileName)
+									message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (renamed to " + appendedFileName + ") because a file with the same name already exists there."
+									break
+								}
+								if i == 9998 {
+									message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already exists there."
+								}
 							}
-							if i == 9998 {
-								message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " because a file with the same name already exists there."
-							}
+							// if there was an error, let's register it as such
+						} else {
+							err = errors.New("Couldn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + " (" + newFileLocationStatErr.Error() + ").")
 						}
 					}
 				}
