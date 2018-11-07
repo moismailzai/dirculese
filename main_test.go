@@ -196,6 +196,124 @@ func TestGetUserHome(t *testing.T) {
 	}
 }
 
+func TestRule_ExtensionHandler(t *testing.T) {
+	// get path to the directory the test is running in
+	_, dir, _, _ := runtime.Caller(0)
+	dir = strings.TrimRight(dir, "main_tes.go")
+
+	// create Directory and Rule objects for the test
+	testDirectory := Directory{path: dir + "testing"}
+	testDirectory.rules = []Rule{
+		{
+			source:     &testDirectory,
+			target:     &Directory{path: dir + "testing" + string(os.PathSeparator) + "doc"},
+			handler:    "ExtensionHandler",
+			extensions: []string{"doc", "pdf"},
+		}, {
+			source:     &testDirectory,
+			target:     &Directory{path: dir + "testing" + string(os.PathSeparator) + "img"},
+			handler:    "ExtensionHandler",
+			extensions: []string{"png", "jpg"},
+		}, {
+			source:     &testDirectory,
+			target:     &Directory{path: dir + "testing" + string(os.PathSeparator) + "noext"},
+			handler:    "ExtensionHandler",
+			extensions: []string{""},
+		}, {
+			source:     &testDirectory,
+			handler:    "ExtensionHandler",
+			delete:     true,
+			extensions: []string{"del"},
+		},
+	}
+
+	// create mock files and directories inside the testing directory
+	mockFiles := []string{"test.png", "test.jpg", "test.doc", "test.pdf", "test", "test.del"}
+	mockDirectories := []string{"doc", "img", "noext"}
+	for _, mockDirectory := range mockDirectories {
+		os.RemoveAll(dir + "testing" + string(os.PathSeparator) + mockDirectory)
+		os.MkdirAll(dir+"testing"+string(os.PathSeparator)+mockDirectory, 0777)
+	}
+	for _, mockFile := range mockFiles {
+		_, err := os.OpenFile(dir+"testing"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			t.Error("Error while creating mock files for this test: " + err.Error())
+		}
+	}
+
+	// run the first test, expecting no errors and for all mock files to have been moved out of the testing directory
+	// and into the appropriate mock directory (but dirculese.test.json should still be present). Using Ruler() means
+	// that every Rule's .ExtensionHandler method will be run in sequence.
+	var want error
+	got := testDirectory.Ruler()
+
+	if want != got {
+		t.Errorf("Something went wrong, ExtensionHandler returned an error. Got '%v', want '%v'", got, want)
+	}
+
+	// now add more mock files to the testing directory
+	for _, file := range mockFiles {
+		_, err := os.OpenFile(dir+"testing"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			t.Error("Error while creating mockFiles for this test: " + err.Error())
+		}
+	}
+
+	// run the second test, again expecting no errors and for all mock files to have been moved out of the test
+	// directory and into the appropriate mock directory (and dirculese.test.json just still be present). also expecting
+	// the subdirectories to have two of each mock files, with the second file having a 0 appended to its name
+	got = testDirectory.Ruler()
+	if want != got {
+		t.Errorf("Something went wrong, an ExtensionHandler returned an error. Got '%v', want '%v'", got, want)
+	}
+
+	// now build a table to verify the test results
+	type directoryTest struct {
+		directory string
+		want      string
+	}
+	directoryTestTable := []directoryTest{
+		{
+			directory: testDirectory.path,
+			want:      "dirculese.test.json",
+		}, {
+			directory: testDirectory.rules[0].target.path,
+			want:      "test.doc,test.pdf,test0.doc,test0.pdf",
+		}, {
+			directory: testDirectory.rules[1].target.path,
+			want:      "test.jpg,test.png,test0.jpg,test0.png",
+		}, {
+			directory: testDirectory.rules[2].target.path,
+			want:      "test,test0",
+		},
+	}
+
+	// verify results
+	for _, d := range directoryTestTable {
+		filesString := ""
+		directoryTest := Directory{path: d.directory}
+		fileInfos, err := directoryTest.Contents()
+		if err != nil {
+			t.Error("Error while getting the contents of" + d.directory + ": " + err.Error())
+		}
+		for _, fileInfo := range fileInfos {
+			if !fileInfo.IsDir() {
+				filesString += fileInfo.Name() + ","
+			}
+		}
+		got := strings.TrimRight(filesString, ",")
+		if d.want != got {
+			t.Errorf("Incorrect filelist in "+testDirectory.path+". Got '%v', want '%v'", got, d.want)
+		}
+	}
+
+	// remove all mock files and directories that were created for this test
+	for _, targetDirectory := range mockDirectories {
+		os.RemoveAll(dir + "testing" + string(os.PathSeparator) + targetDirectory)
+	}
+
+}
+
 func TestRule_Handler(t *testing.T) {
 	want := "you need to specify at least one extension"
 
