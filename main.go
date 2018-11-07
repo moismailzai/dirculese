@@ -228,7 +228,8 @@ func (r *Rule) ExtensionHandler() (err error) {
 					message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
 				} else {
 					// otherwise, check to see if a file by this name exists in the destination directory, if not, move it
-					if _, e := os.Stat(r.target.path + string(os.PathSeparator) + f.Name()); os.IsNotExist(e) {
+					_, newFileLocationStatErr := os.Stat(r.target.path + string(os.PathSeparator) + f.Name())
+					if os.IsNotExist(newFileLocationStatErr) {
 						err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+f.Name())
 						message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + "."
 					} else {
