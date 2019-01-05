@@ -128,9 +128,9 @@ pre1__test3.txt
 The contents of ```pre2``` would be:
 
 ```
-pre1__test1.txt
-pre1__test2.txt
-pre1__test3.txt
+pre2--test1.txt
+pre2--test2.txt
+pre2--test3.txt
 ```
 
 Besides ```pre1``` and ```pre2```, ```/path/to/a/target/directory``` would be empty because the last file, ```pre3++test1.txt``` would have been deleted (based on the second rule).
