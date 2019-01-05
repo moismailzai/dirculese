@@ -555,8 +555,7 @@ func ValidateConfigFile(path string) (err error) {
 	return
 }
 
-func main() {
-
+func Dirculese() (message string) {
 	// load the configuration file
 	configFilePath, err := GetConfigFilePath()
 
@@ -564,7 +563,7 @@ func main() {
 		message := "Whoops: "
 		message += err.Error()
 		message += "."
-		logError.Fatalln(message)
+		return message
 	}
 
 	// validate that the configuration file exists and is in json format
@@ -578,7 +577,7 @@ func main() {
 		message += ". Here's what a valid Dirculese configuration file looks like: "
 		message += GetSampleConfig()
 		message += " See https://github.com/moismailzai/dirculese for more information."
-		logError.Fatalln(message)
+		return message
 	}
 
 	// map the configuration file to a configuration struct
@@ -592,7 +591,7 @@ func main() {
 		message += ". Here's what a valid Dirculese configuration file looks like: "
 		message += GetSampleConfig()
 		message += " See https://github.com/moismailzai/dirculese for more information."
-		logError.Fatalln(message)
+		return message
 	}
 
 	// use the configuration struct to build directories and rules
@@ -601,9 +600,17 @@ func main() {
 	for _, directory := range directories {
 		err := directory.Ruler()
 		if err != nil {
-			logError.Fatalln(err.Error())
+			return err.Error()
 		}
 	}
 
+	return
+}
+
+func main() {
+	err := Dirculese()
+	if err != "" {
+		logError.Fatalln(err)
+	}
 	os.Exit(0)
 }

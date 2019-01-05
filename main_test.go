@@ -578,3 +578,12 @@ func TestValidateConfigFile(t *testing.T) {
 		t.Errorf("Couldn't validate config file. Got '%v', want '%v'", got, want)
 	}
 }
+
+func TestDirculese(t *testing.T) {
+	flagConfig = ""
+	var want string
+	got := Dirculese()
+	if got != want {
+		t.Errorf("Dirculese threw an error. Got '%v', want '%v'", got, want)
+	}
+}
