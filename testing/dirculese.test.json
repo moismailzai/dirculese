@@ -10,6 +10,12 @@
           "Extensions": [
             "png"
           ],
+          "PrefixDelimiters": [
+            "__"
+          ],
+          "SuffixDelimiters": [
+            "--"
+          ],
           "SizeMax": 0,
           "SizeMin": 0,
           "DateMax": 0,

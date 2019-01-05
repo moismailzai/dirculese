@@ -21,6 +21,12 @@ file called .dirculese.json in your home directory. Here's what a basic configur
 			  "Extensions": [
 				"png"
 			  ],
+			  "PrefixDelimiters": [
+				"__"
+              ],
+			  "SuffixDelimiters": [
+				"--"
+              ],
 			  "SizeMax": 0,
 			  "SizeMin": 0,
 			  "DateMax": 0,
@@ -50,6 +56,7 @@ import (
 	"log"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -105,14 +112,16 @@ type DirectoryConfig struct {
 
 // RuleConfig is a simple struct that is used to map to a single rule in a dirculese JSON configuration file.
 type RuleConfig struct {
-	Target     string
-	Delete     bool
-	Handler    string
-	Extensions []string
-	SizeMax    int
-	SizeMin    int
-	DateMax    int
-	DateMin    int
+	Target           string
+	Delete           bool
+	Handler          string
+	Extensions       []string
+	PrefixDelimiters []string
+	SuffixDelimiters []string
+	SizeMax          int
+	SizeMin          int
+	DateMax          int
+	DateMin          int
 }
 
 // Directory is the basic type of a managed directory. Directories are managed based on the Rule items in the
@@ -129,15 +138,17 @@ type Directory struct {
 // true, in which case the files will be deleted instead. Rule.handler is the name of the handler function that should
 // be used to execute the rule's logic, and is parsed by Rule.Handler().
 type Rule struct {
-	source     *Directory
-	target     *Directory
-	delete     bool
-	handler    string
-	extensions []string
-	sizeMax    int
-	sizeMin    int
-	dateMax    int
-	dateMin    int
+	source           *Directory
+	target           *Directory
+	delete           bool
+	handler          string
+	extensions       []string
+	prefixDelimiters []string
+	suffixDelimiters []string
+	sizeMax          int
+	sizeMin          int
+	dateMax          int
+	dateMin          int
 }
 
 // CheckPath tests to see if a directory's d.path points to an existing directory on the filesystem.
@@ -182,6 +193,10 @@ func (r *Rule) Handler() (err error) {
 	switch r.handler {
 	case "ExtensionHandler":
 		err = r.ExtensionHandler()
+	case "PrefixHandler":
+		err = r.PrefixHandler()
+	case "SuffixHandler":
+		err = r.SuffixHandler()
 	default:
 		err = errors.New("unrecognized handler")
 	}
@@ -269,6 +284,182 @@ func (r *Rule) ExtensionHandler() (err error) {
 	return
 }
 
+// PrefixHandler iterates through all of the files in a rule's r.source directory and handles any file whose name
+// portion (excluding extension) includes a substring that matches any member of the the r.prefixDelimiters slice.
+// Matching files are either deleted (depending on the boolean state of r.delete) or moved into a subdirectory of
+// r.target. The name of this subdirectory will be the portion of the filename that precedes the prefix delimiter and
+// the subdirectory will be automatically created if it does not already exist.
+func (r *Rule) PrefixHandler() (err error) {
+
+	if len(r.prefixDelimiters) == 0 {
+		return errors.New("you need to specify at least one prefix delimiter")
+	}
+
+	// make sure the path we're going to be moving items into exists and is accessible (only necessary if r.delete is
+	// false
+	if !r.delete {
+		err = r.target.CheckPath()
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	// get a list of all the items in the directory we're managing
+	files, err := r.source.Contents()
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	// for each item
+	for _, f := range files {
+		// if it's a file
+		if !f.IsDir() {
+			var message string
+			fileName := strings.TrimSuffix(f.Name(), path.Ext(f.Name()))
+			for _, prefix := range r.prefixDelimiters {
+				result := strings.Split(fileName, prefix)
+				if len(result) > 1 {
+					// if the delete flag is set, delete the file
+					if r.delete {
+						err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
+						message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
+					} else {
+						// otherwise, create the new directory if necessary
+						if _, err := os.Stat(r.target.path + string(os.PathSeparator) + result[0]); os.IsNotExist(err) {
+							err = os.MkdirAll(r.target.path+string(os.PathSeparator)+result[0], 0755)
+							if err != nil {
+								return errors.New(err.Error())
+							}
+						}
+						// and stat the full path of the new file we want to create
+						_, newFileLocationStatErr := os.Stat(r.target.path + string(os.PathSeparator) + result[0] + string(os.PathSeparator) + f.Name())
+						// and check for an IsNotExist error, which means a file by that name doesn't already exist
+						// in the new location and we're safe to move it there
+						if os.IsNotExist(newFileLocationStatErr) {
+							err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+result[0]+string(os.PathSeparator)+f.Name())
+							message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[0] + "."
+						} else {
+							// if there was no error, it means a file by that name does already exist in the new
+							// location, so lets try appending numbers to the end of the filename and redo the stat
+							// check up to 9998 times (which is an entirely arbitrary limit)
+							if newFileLocationStatErr == nil {
+								for i := 0; i < 9999; i++ {
+									appendedFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
+									if _, newFileLocationStatErr := os.Stat(r.target.path + string(os.PathSeparator) + result[0] + string(os.PathSeparator) + appendedFileName); os.IsNotExist(newFileLocationStatErr) {
+										err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+result[0]+string(os.PathSeparator)+appendedFileName)
+										message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[0] + " (renamed to " + appendedFileName + ") because a file with the same name already exists there."
+										break
+									}
+									if i == 9998 {
+										message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[0] + " because a file with the same name already exists there."
+									}
+								}
+								// if there was an error, let's register it as such
+							} else {
+								err = errors.New("Couldn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[0] + " (" + newFileLocationStatErr.Error() + ").")
+							}
+						}
+					}
+					if err != nil {
+						return errors.New(err.Error())
+					}
+					logStandard.Println(message)
+					continue
+				}
+			}
+		}
+	}
+	return
+}
+
+// SuffixHandler iterates through all of the files in a rule's r.source directory and handles any file whose name
+// portion (excluding extension) includes a substring that matches any member of the the r.suffixDelimiters slice.
+// Matching files are either deleted (depending on the boolean state of r.delete) or moved into a subdirectory of
+// r.target. The name of this subdirectory will be the portion of the filename that follows the suffix delimiter and
+// the subdirectory will be automatically created if it does not already exist.
+func (r *Rule) SuffixHandler() (err error) {
+
+	if len(r.suffixDelimiters) == 0 {
+		return errors.New("you need to specify at least one suffix delimiter")
+	}
+
+	// make sure the path we're going to be moving items into exists and is accessible (only necessary if r.delete is
+	// false
+	if !r.delete {
+		err = r.target.CheckPath()
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	// get a list of all the items in the directory we're managing
+	files, err := r.source.Contents()
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	// for each item
+	for _, f := range files {
+		// if it's a file
+		if !f.IsDir() {
+			var message string
+			fileName := strings.TrimSuffix(f.Name(), path.Ext(f.Name()))
+			for _, suffix := range r.suffixDelimiters {
+				result := strings.Split(fileName, suffix)
+				if len(result) > 1 {
+					// if the delete flag is set, delete the file
+					if r.delete {
+						err = os.Remove(r.source.path + string(os.PathSeparator) + f.Name())
+						message = "Deleted the file " + f.Name() + " in the path " + r.source.path + "."
+					} else {
+						// otherwise, create the new directory if necessary
+						if _, err := os.Stat(r.target.path + string(os.PathSeparator) + result[1]); os.IsNotExist(err) {
+							err = os.MkdirAll(r.target.path+string(os.PathSeparator)+result[1], 0755)
+							if err != nil {
+								return errors.New(err.Error())
+							}
+						}
+						// and stat the full path of the new file we want to create
+						_, newFileLocationStatErr := os.Stat(r.target.path + string(os.PathSeparator) + result[1] + string(os.PathSeparator) + f.Name())
+						// and check for an IsNotExist error, which means a file by that name doesn't already exist
+						// in the new location and we're safe to move it there
+						if os.IsNotExist(newFileLocationStatErr) {
+							err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+result[1]+string(os.PathSeparator)+f.Name())
+							message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[1] + "."
+						} else {
+							// if there was no error, it means a file by that name does already exist in the new
+							// location, so lets try appending numbers to the end of the filename and redo the stat
+							// check up to 9998 times (which is an entirely arbitrary limit)
+							if newFileLocationStatErr == nil {
+								for i := 0; i < 9999; i++ {
+									appendedFileName := strings.TrimRight(f.Name(), filepath.Ext(f.Name())) + strconv.Itoa(i) + filepath.Ext(f.Name())
+									if _, newFileLocationStatErr := os.Stat(r.target.path + string(os.PathSeparator) + result[1] + string(os.PathSeparator) + appendedFileName); os.IsNotExist(newFileLocationStatErr) {
+										err = os.Rename(r.source.path+string(os.PathSeparator)+f.Name(), r.target.path+string(os.PathSeparator)+result[1]+string(os.PathSeparator)+appendedFileName)
+										message = "Moved the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[1] + " (renamed to " + appendedFileName + ") because a file with the same name already exists there."
+										break
+									}
+									if i == 9998 {
+										message = "Didn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[1] + " because a file with the same name already exists there."
+									}
+								}
+								// if there was an error, let's register it as such
+							} else {
+								err = errors.New("Couldn't move the file " + f.Name() + " from the path " + r.source.path + " to " + r.target.path + string(os.PathSeparator) + result[1] + " (" + newFileLocationStatErr.Error() + ").")
+							}
+						}
+					}
+					if err != nil {
+						return errors.New(err.Error())
+					}
+					logStandard.Println(message)
+					continue
+				}
+			}
+		}
+	}
+	return
+}
+
 // GetConfigFilePath returns the full path to the user's dirculese configuration file. If a -config flag was specified,
 // its argument will be used verbatim. Otherwise, the path to the user's home directory will be prepended to the OS's
 // path separator and the constant DefaultConfigFile.
@@ -316,6 +507,8 @@ func GetDirectories(config DirectoriesConfig) (directories []Directory) {
 			rule.delete = ruleConf.Delete
 			rule.handler = ruleConf.Handler
 			rule.extensions = ruleConf.Extensions
+			rule.prefixDelimiters = ruleConf.PrefixDelimiters
+			rule.suffixDelimiters = ruleConf.SuffixDelimiters
 			rule.sizeMax = ruleConf.SizeMax
 			rule.sizeMin = ruleConf.SizeMin
 			rule.dateMax = ruleConf.DateMax
@@ -329,7 +522,7 @@ func GetDirectories(config DirectoriesConfig) (directories []Directory) {
 
 // GetSampleConfig generates a sample dirculese configuration file.
 func GetSampleConfig() (config string) {
-	config = `{"Directories":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
+	config = `{"Directories":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"PrefixDelimiters":["__"],"SuffixDelimiters":["--"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
 	return
 }
 

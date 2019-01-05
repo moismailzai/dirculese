@@ -14,31 +14,35 @@ var (
 		Directories: []DirectoryConfig{{
 			Path: "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
 			Rules: []RuleConfig{{
-				Target:     "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved",
-				Delete:     false,
-				Handler:    "ExtensionHandler",
-				Extensions: []string{"png"},
-				SizeMax:    0,
-				SizeMin:    0,
-				DateMax:    0,
-				DateMin:    0,
+				Target:           "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved",
+				Delete:           false,
+				Handler:          "ExtensionHandler",
+				Extensions:       []string{"png"},
+				PrefixDelimiters: []string{"__"},
+				SuffixDelimiters: []string{"--"},
+				SizeMax:          0,
+				SizeMin:          0,
+				DateMax:          0,
+				DateMin:          0,
 			}},
 		}},
 	}
 	directories = []Directory{{
 		path: "/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules",
 		rules: []Rule{{
-			target:     &Directory{path: "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved"},
-			delete:     false,
-			handler:    "ExtensionHandler",
-			extensions: []string{"png"},
-			sizeMax:    0,
-			sizeMin:    0,
-			dateMax:    0,
-			dateMin:    0,
+			target:           &Directory{path: "/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved"},
+			delete:           false,
+			handler:          "ExtensionHandler",
+			extensions:       []string{"png"},
+			prefixDelimiters: []string{"__"},
+			suffixDelimiters: []string{"--"},
+			sizeMax:          0,
+			sizeMin:          0,
+			dateMax:          0,
+			dateMin:          0,
 		}},
 	}}
-	sampleConfig = `{"Directories":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
+	sampleConfig = `{"Directories":[{"Path":"/path/to/a/source/directory/that/you/want/to/keep/organized/with/dirculese/rules","Rules":[{"Target":"/path/to/a/destination/directory/where/items/matching/your/rule/will/be/moved","Delete":false,"Handler":"ExtensionHandler","Extensions":["png"],"PrefixDelimiters":["__"],"SuffixDelimiters":["--"],"SizeMax":0,"SizeMin":0,"DateMax":0,"DateMin":0}]}]}`
 )
 
 func init() {
@@ -86,17 +90,22 @@ func TestDirectory_Contents(t *testing.T) {
 }
 
 func TestDirectory_Ruler(t *testing.T) {
-	want := "you need to specify at least one extension"
+	want := map[string]string{
+		"ExtensionHandler": "you need to specify at least one extension",
+		"PrefixHandler":    "you need to specify at least one prefix delimiter",
+		"SuffixHandler":    "you need to specify at least one suffix delimiter",
+	}
 
 	testDirectory := Directory{}
 	testDirectory.rules = append(testDirectory.rules, Rule{})
-	testDirectory.rules[0].handler = "ExtensionHandler"
 
-	err := testDirectory.Ruler()
-	got := err.Error()
-
-	if want != got {
-		t.Errorf("The correct handler was not run. Got '%v', want '%v'", got, want)
+	for handler, message := range want {
+		testDirectory.rules[0].handler = handler
+		err := testDirectory.Ruler()
+		got := err.Error()
+		if message != got {
+			t.Errorf("The correct handler was not run. Got '%v', want '%v'", got, message)
+		}
 	}
 }
 
@@ -134,6 +143,12 @@ func TestGetConfigStruct(t *testing.T) {
 	if got.Directories[0].Rules[0].Extensions[0] != want.Directories[0].Rules[0].Extensions[0] {
 		t.Errorf("Mismatch in Extensions[0]. Got '%v', want '%v'", got.Directories[0].Rules[0].Extensions[0], want.Directories[0].Rules[0].Extensions[0])
 	}
+	if got.Directories[0].Rules[0].SuffixDelimiters[0] != want.Directories[0].Rules[0].SuffixDelimiters[0] {
+		t.Errorf("Mismatch in SuffixDelimiters[0]. Got '%v', want '%v'", got.Directories[0].Rules[0].SuffixDelimiters[0], want.Directories[0].Rules[0].SuffixDelimiters[0])
+	}
+	if got.Directories[0].Rules[0].PrefixDelimiters[0] != want.Directories[0].Rules[0].PrefixDelimiters[0] {
+		t.Errorf("Mismatch in PrefixDelimiters[0]. Got '%v', want '%v'", got.Directories[0].Rules[0].PrefixDelimiters[0], want.Directories[0].Rules[0].PrefixDelimiters[0])
+	}
 	if got.Directories[0].Rules[0].SizeMax != want.Directories[0].Rules[0].SizeMax {
 		t.Errorf("Mismatch in SizeMax. Got '%v', want '%v'", got.Directories[0].Rules[0].SizeMax, want.Directories[0].Rules[0].SizeMax)
 	}
@@ -164,6 +179,12 @@ func TestGetDirectories(t *testing.T) {
 	}
 	if got[0].rules[0].extensions[0] != want[0].rules[0].extensions[0] {
 		t.Errorf("Mismatch in extensions[0]. Got '%v', want '%v'", got[0].rules[0].extensions[0], want[0].rules[0].extensions[0])
+	}
+	if got[0].rules[0].prefixDelimiters[0] != want[0].rules[0].prefixDelimiters[0] {
+		t.Errorf("Mismatch in prefixDelimiters[0]. Got '%v', want '%v'", got[0].rules[0].prefixDelimiters[0], want[0].rules[0].prefixDelimiters[0])
+	}
+	if got[0].rules[0].suffixDelimiters[0] != want[0].rules[0].suffixDelimiters[0] {
+		t.Errorf("Mismatch in suffixDelimiters[0]. Got '%v', want '%v'", got[0].rules[0].suffixDelimiters[0], want[0].rules[0].suffixDelimiters[0])
 	}
 	if got[0].rules[0].sizeMax != want[0].rules[0].sizeMax {
 		t.Errorf("Mismatch in sizeMax. Got '%v', want '%v'", got[0].rules[0].sizeMax, want[0].rules[0].sizeMax)
@@ -314,17 +335,236 @@ func TestRule_ExtensionHandler(t *testing.T) {
 
 }
 
-func TestRule_Handler(t *testing.T) {
-	want := "you need to specify at least one extension"
+func TestRule_PrefixHandler(t *testing.T) {
+	// get path to the directory the test is running in
+	_, dir, _, _ := runtime.Caller(0)
+	dir = strings.TrimRight(dir, "main_tes.go")
 
-	testRule := Rule{}
-	testRule.handler = "ExtensionHandler"
+	// create Directory and Rule object for the test
+	testDirectory := Directory{path: dir + "testing"}
+	testDirectory.rules = []Rule{
+		{
+			source:           &testDirectory,
+			target:           &Directory{path: dir + "testing"},
+			handler:          "PrefixHandler",
+			prefixDelimiters: []string{"__"},
+		}, {
+			source:           &testDirectory,
+			target:           &Directory{path: dir + "testing"},
+			handler:          "PrefixHandler",
+			prefixDelimiters: []string{"--"},
+		}, {
+			source:           &testDirectory,
+			target:           &Directory{path: dir + "testing"},
+			handler:          "PrefixHandler",
+			delete:           true,
+			prefixDelimiters: []string{"++"},
+		},
+	}
 
-	err := testRule.Handler()
-	got := err.Error()
+	// create mock files and directories inside the testing directory
+	mockFiles := []string{"pre1__test1.txt", "pre1__test2.txt", "pre1__test3.txt", "pre2--test1.txt", "pre2--test2.txt", "pre2--test3.txt", "pre3++test1.txt"}
+	mockDirectories := []string{"pre1", "pre2"}
+	for _, mockFile := range mockFiles {
+		_, err := os.OpenFile(dir+"testing"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			t.Error("Error while creating mock files for this test: " + err.Error())
+		}
+	}
+
+	// run the first test, expecting no errors and for all mock files to have been moved out of the testing directory
+	// and into the appropriate mock directory (but dirculese.test.json should still be present). Using Ruler() means
+	// that every Rule's .ExtensionHandler method will be run in sequence.
+	var want error
+	got := testDirectory.Ruler()
 
 	if want != got {
-		t.Errorf("The correct handler was not run. Got '%v', want '%v'", got, want)
+		t.Errorf("Something went wrong, PrefixHandler returned an error. Got '%v', want '%v'", got, want)
+	}
+
+	// now add more mock files to the testing directory
+	for _, file := range mockFiles {
+		_, err := os.OpenFile(dir+"testing"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			t.Error("Error while creating mockFiles for this test: " + err.Error())
+		}
+	}
+
+	// run the second test, again expecting no errors and for all mock files to have been moved out of the test
+	// directory and into the appropriate mock directory (and dirculese.test.json just still be present). also expecting
+	// the subdirectories to have two of each mock files, with the second file having a 0 appended to its name
+	got = testDirectory.Ruler()
+	if want != got {
+		t.Errorf("Something went wrong, an PrefixHandler returned an error. Got '%v', want '%v'", got, want)
+	}
+
+	// now build a table to verify the test results
+	type directoryTest struct {
+		directory string
+		want      string
+	}
+	directoryTestTable := []directoryTest{
+		{
+			directory: testDirectory.path,
+			want:      "dirculese.test.json",
+		}, {
+			directory: testDirectory.rules[0].target.path + string(os.PathSeparator) + "pre1",
+			want:      "pre1__test1.txt,pre1__test10.txt,pre1__test2.txt,pre1__test20.txt,pre1__test3.txt,pre1__test30.txt",
+		}, {
+			directory: testDirectory.rules[0].target.path + string(os.PathSeparator) + "pre2",
+			want:      "pre2--test1.txt,pre2--test10.txt,pre2--test2.txt,pre2--test20.txt,pre2--test3.txt,pre2--test30.txt",
+		},
+	}
+
+	// verify results
+	for _, d := range directoryTestTable {
+		filesString := ""
+		directoryTest := Directory{path: d.directory}
+		fileInfos, err := directoryTest.Contents()
+		if err != nil {
+			t.Error("Error while getting the contents of" + d.directory + ": " + err.Error())
+		}
+		for _, fileInfo := range fileInfos {
+			if !fileInfo.IsDir() {
+				filesString += fileInfo.Name() + ","
+			}
+		}
+		got := strings.TrimRight(filesString, ",")
+		if d.want != got {
+			t.Errorf("Incorrect filelist in "+testDirectory.path+". Got '%v', want '%v'", got, d.want)
+		}
+	}
+
+	// remove all mock files and directories that were created for this test
+	for _, targetDirectory := range mockDirectories {
+		os.RemoveAll(dir + "testing" + string(os.PathSeparator) + targetDirectory)
+	}
+
+}
+
+func TestRule_SuffixHandler(t *testing.T) {
+	// get path to the directory the test is running in
+	_, dir, _, _ := runtime.Caller(0)
+	dir = strings.TrimRight(dir, "main_tes.go")
+
+	// create Directory and Rule object for the test
+	testDirectory := Directory{path: dir + "testing"}
+	testDirectory.rules = []Rule{
+		{
+			source:           &testDirectory,
+			target:           &Directory{path: dir + "testing"},
+			handler:          "SuffixHandler",
+			suffixDelimiters: []string{"__"},
+		}, {
+			source:           &testDirectory,
+			target:           &Directory{path: dir + "testing"},
+			handler:          "SuffixHandler",
+			suffixDelimiters: []string{"--"},
+		}, {
+			source:           &testDirectory,
+			target:           &Directory{path: dir + "testing"},
+			handler:          "SuffixHandler",
+			delete:           true,
+			suffixDelimiters: []string{"++"},
+		},
+	}
+
+	// create mock files and directories inside the testing directory
+	mockFiles := []string{"test1__suf1.txt", "test2__suf1.txt", "test3__suf1.txt", "test1--suf2.txt", "test2--suf2.txt", "test3--suf2.txt", "test1++suf3.txt"}
+	mockDirectories := []string{"suf1", "suf2"}
+	for _, mockFile := range mockFiles {
+		_, err := os.OpenFile(dir+"testing"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			t.Error("Error while creating mock files for this test: " + err.Error())
+		}
+	}
+
+	// run the first test, expecting no errors and for all mock files to have been moved out of the testing directory
+	// and into the appropriate mock directory (but dirculese.test.json should still be present). Using Ruler() means
+	// that every Rule's .ExtensionHandler method will be run in sequence.
+	var want error
+	got := testDirectory.Ruler()
+
+	if want != got {
+		t.Errorf("Something went wrong, SuffixHandler returned an error. Got '%v', want '%v'", got, want)
+	}
+
+	// now add more mock files to the testing directory
+	for _, file := range mockFiles {
+		_, err := os.OpenFile(dir+"testing"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			t.Error("Error while creating mockFiles for this test: " + err.Error())
+		}
+	}
+
+	// run the second test, again expecting no errors and for all mock files to have been moved out of the test
+	// directory and into the appropriate mock directory (and dirculese.test.json just still be present). also expecting
+	// the subdirectories to have two of each mock files, with the second file having a 0 appended to its name
+	got = testDirectory.Ruler()
+	if want != got {
+		t.Errorf("Something went wrong, an SuffixHandler returned an error. Got '%v', want '%v'", got, want)
+	}
+
+	// now build a table to verify the test results
+	type directoryTest struct {
+		directory string
+		want      string
+	}
+	directoryTestTable := []directoryTest{
+		{
+			directory: testDirectory.path,
+			want:      "dirculese.test.json",
+		}, {
+			directory: testDirectory.rules[0].target.path + string(os.PathSeparator) + "suf1",
+			want:      "test1__suf1.txt,test1__suf10.txt,test2__suf1.txt,test2__suf10.txt,test3__suf1.txt,test3__suf10.txt",
+		}, {
+			directory: testDirectory.rules[0].target.path + string(os.PathSeparator) + "suf2",
+			want:      "test1--suf2.txt,test1--suf20.txt,test2--suf2.txt,test2--suf20.txt,test3--suf2.txt,test3--suf20.txt",
+		},
+	}
+
+	// verify results
+	for _, d := range directoryTestTable {
+		filesString := ""
+		directoryTest := Directory{path: d.directory}
+		fileInfos, err := directoryTest.Contents()
+		if err != nil {
+			t.Error("Error while getting the contents of" + d.directory + ": " + err.Error())
+		}
+		for _, fileInfo := range fileInfos {
+			if !fileInfo.IsDir() {
+				filesString += fileInfo.Name() + ","
+			}
+		}
+		got := strings.TrimRight(filesString, ",")
+		if d.want != got {
+			t.Errorf("Incorrect filelist in "+testDirectory.path+". Got '%v', want '%v'", got, d.want)
+		}
+	}
+
+	// remove all mock files and directories that were created for this test
+	for _, targetDirectory := range mockDirectories {
+		os.RemoveAll(dir + "testing" + string(os.PathSeparator) + targetDirectory)
+	}
+
+}
+
+func TestRule_Handler(t *testing.T) {
+	want := map[string]string{
+		"ExtensionHandler": "you need to specify at least one extension",
+		"PrefixHandler":    "you need to specify at least one prefix delimiter",
+		"SuffixHandler":    "you need to specify at least one suffix delimiter",
+	}
+
+	testRule := Rule{}
+
+	for handler, message := range want {
+		testRule.handler = handler
+		err := testRule.Handler()
+		got := err.Error()
+		if message != got {
+			t.Errorf("The correct handler was not run. Got '%v', want '%v'", got, message)
+		}
 	}
 }
 
