@@ -3,8 +3,8 @@ dirculese organizes your directories so you don't have to.
 Usage:
 	dirculese [flag]
 The flags are:
-	-silent
-		suppress all messages to standard out and standard error (they are still logged)
+	-verbose
+		also print log messages to standard out and standard error
 	-config /full/path/to/your/config.json
 		the full path to a dirculese configuration file
 Before you can use dirculese, you will need to create a configuration file. By default, dirculese will try to load a
@@ -71,14 +71,14 @@ const (
 
 var (
 	flagConfig  string
-	flagSilent  bool
+	flagVerbose bool
 	logStandard *log.Logger
 	logError    *log.Logger
 )
 
 func init() {
 	flag.StringVar(&flagConfig, "config", "", "the full path to a dirculese configuration file")
-	flag.BoolVar(&flagSilent, "silent", false, "suppress all messages to standard out and standard error (they are still logged)")
+	flag.BoolVar(&flagVerbose, "verbose", false, "also print log messages to standard out and standard error")
 	flag.Parse()
 
 	// setup logging
@@ -88,13 +88,13 @@ func init() {
 		log.Fatalln("Failed to open log file '"+DefaultLogFile+"': ", err.Error())
 	}
 
-	// suppress standard output if the -silent flag was used
-	if flagSilent {
-		logStandard = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
-		logError = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
-	} else {
+	// also print log messages to standard out and standard error if the -verbose flag was used
+	if flagVerbose {
 		logStandard = log.New(io.MultiWriter(logFile, os.Stdout), "", log.Ldate|log.Ltime|log.Lshortfile)
 		logError = log.New(io.MultiWriter(logFile, os.Stderr), "", log.Ldate|log.Ltime|log.Lshortfile)
+	} else {
+		logStandard = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
+		logError = log.New(logFile, "", log.Ldate|log.Ltime|log.Lshortfile)
 	}
 }
 

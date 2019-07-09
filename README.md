@@ -49,10 +49,10 @@ If want to place your configuration file somewhere else, just call dirculese wit
 dirculese -config /full/path/to/your/config.json
 ```
 
-By default, dirculese is very verbose about what it's doing, but you can tell it to be silent with the ```-silent``` flag:
+By default, dirculese runs silently but you can tell it to be more verbose with the ```-verbose``` flag:
 
 ```
-dirculese -silent
+dirculese -verbose
 ```
 
 Even when running silently, dirculese logs everything to ```dirculese.log``` which it saves in your home directory.
@@ -141,4 +141,4 @@ SuffixHandler iterates through all of the files in the directory that it is mana
 See the examples from PrefixHandler.
 
 ## Contributing
-Contributions are eagerly accepted.
+Contributions are happily accepted.
