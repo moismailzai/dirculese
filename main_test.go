@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -51,7 +52,7 @@ func init() {
 
 func TestDirectory_CheckPath(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_tes.go")
+	dir = filepath.FromSlash(strings.TrimRight(dir, "main_tes.go"))
 
 	testDirectoryPass := Directory{path: dir + "testdata"}
 	testDirectoryFail := Directory{path: dir + "PATH-DOES-NOT-EXIST"}
@@ -73,7 +74,7 @@ func TestDirectory_CheckPath(t *testing.T) {
 
 func TestDirectory_Contents(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_tes.go")
+	dir = filepath.FromSlash(strings.TrimRight(dir, "main_tes.go"))
 
 	testDirectory := Directory{path: dir + "testdata"}
 
@@ -220,7 +221,7 @@ func TestGetUserHome(t *testing.T) {
 func TestRule_ExtensionHandler(t *testing.T) {
 	// get path to the directory the test is running in
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_tes.go")
+	dir = filepath.FromSlash(strings.TrimRight(dir, "main_tes.go"))
 
 	// create Directory and Rule objects for the test
 	testDirectory := Directory{path: dir + "testdata"}
@@ -256,9 +257,11 @@ func TestRule_ExtensionHandler(t *testing.T) {
 		os.MkdirAll(dir+"testdata"+string(os.PathSeparator)+mockDirectory, 0777)
 	}
 	for _, mockFile := range mockFiles {
-		_, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
+		f, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			t.Error("Error while creating mock files for this test: " + err.Error())
+		} else {
+			f.Close()
 		}
 	}
 
@@ -274,9 +277,11 @@ func TestRule_ExtensionHandler(t *testing.T) {
 
 	// now add more mock files to the testdata directory
 	for _, file := range mockFiles {
-		_, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
+		f, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			t.Error("Error while creating mockFiles for this test: " + err.Error())
+		} else {
+			f.Close()
 		}
 	}
 
@@ -338,7 +343,7 @@ func TestRule_ExtensionHandler(t *testing.T) {
 func TestRule_PrefixHandler(t *testing.T) {
 	// get path to the directory the test is running in
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_tes.go")
+	dir = filepath.FromSlash(strings.TrimRight(dir, "main_tes.go"))
 
 	// create Directory and Rule object for the test
 	testDirectory := Directory{path: dir + "testdata"}
@@ -366,9 +371,11 @@ func TestRule_PrefixHandler(t *testing.T) {
 	mockFiles := []string{"pre1__test1.txt", "pre1__test2.txt", "pre1__test3.txt", "pre2--test1.txt", "pre2--test2.txt", "pre2--test3.txt", "pre3++test1.txt"}
 	mockDirectories := []string{"pre1", "pre2"}
 	for _, mockFile := range mockFiles {
-		_, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
+		f, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			t.Error("Error while creating mock files for this test: " + err.Error())
+		} else {
+			f.Close()
 		}
 	}
 
@@ -384,9 +391,11 @@ func TestRule_PrefixHandler(t *testing.T) {
 
 	// now add more mock files to the testdata directory
 	for _, file := range mockFiles {
-		_, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
+		f, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			t.Error("Error while creating mockFiles for this test: " + err.Error())
+		} else {
+			f.Close()
 		}
 	}
 
@@ -445,7 +454,7 @@ func TestRule_PrefixHandler(t *testing.T) {
 func TestRule_SuffixHandler(t *testing.T) {
 	// get path to the directory the test is running in
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_tes.go")
+	dir = filepath.FromSlash(strings.TrimRight(dir, "main_tes.go"))
 
 	// create Directory and Rule object for the test
 	testDirectory := Directory{path: dir + "testdata"}
@@ -473,9 +482,11 @@ func TestRule_SuffixHandler(t *testing.T) {
 	mockFiles := []string{"test1__suf1.txt", "test2__suf1.txt", "test3__suf1.txt", "test1--suf2.txt", "test2--suf2.txt", "test3--suf2.txt", "test1++suf3.txt"}
 	mockDirectories := []string{"suf1", "suf2"}
 	for _, mockFile := range mockFiles {
-		_, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
+		f, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+mockFile, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			t.Error("Error while creating mock files for this test: " + err.Error())
+		} else {
+			f.Close()
 		}
 	}
 
@@ -491,9 +502,11 @@ func TestRule_SuffixHandler(t *testing.T) {
 
 	// now add more mock files to the testdata directory
 	for _, file := range mockFiles {
-		_, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
+		f, err := os.OpenFile(dir+"testdata"+string(os.PathSeparator)+file, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			t.Error("Error while creating mockFiles for this test: " + err.Error())
+		} else {
+			f.Close()
 		}
 	}
 
@@ -570,7 +583,7 @@ func TestRule_Handler(t *testing.T) {
 
 func TestValidateConfigFile(t *testing.T) {
 	_, dir, _, _ := runtime.Caller(0)
-	dir = strings.TrimRight(dir, "main_tes.go")
+	dir = filepath.FromSlash(strings.TrimRight(dir, "main_tes.go"))
 
 	var want error
 	got := ValidateConfigFile(dir + "testdata" + string(os.PathSeparator) + "dirculese.test.json")
